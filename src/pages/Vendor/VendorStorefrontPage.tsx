@@ -1,0 +1,404 @@
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { Loading, Alert } from "../../components/UI";
+import { ProductCard } from "@/components/Product";
+import { useRealProductsList } from "../../hooks/api/useRealProducts";
+import { useAllRealCategories } from "../../hooks/api/useRealCategories";
+import { normalizeProductImages } from "../../lib/utils";
+import { useNotificationContext } from "../../providers/NotificationProvider";
+import { config } from "../../lib/config";
+import {
+Star,
+Search,
+ChevronDown,
+ArrowUpDown,
+Copy,
+CheckCircle,
+MapPin
+} from "lucide-react";
+const VendorStorefrontPage: React.FC = () => {
+const { vendorId } = useParams<{ vendorId: string }>();
+const [searchQuery, setSearchQuery] = useState("");
+const [selectedCategory, setSelectedCategory] = useState("");
+const [sortBy, setSortBy] = useState("default");
+const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+const { showNotification } = useNotificationContext();
+const catDropdownRef = useRef<HTMLDivElement>(null);
+// Close dropdown on click outside
+useEffect(() => {
+function handleClickOutside(event: MouseEvent) {
+if (
+catDropdownRef.current &&
+!catDropdownRef.current.contains(event.target as Node)
+) {
+setIsCategoryDropdownOpen(false);
+}
+}
+document.addEventListener("mousedown", handleClickOutside);
+return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+// Fetch all products (we'll filter by vendorId client-side)
+const { products, loading, error } = useRealProductsList({
+page: 1,
+perPage: 1000, // Fetch a large number to get all vendor products
+});
+// Fetch categories from API
+const { getMainCategories } = useAllRealCategories();
+const mainCategories = getMainCategories();
+// Filter products by vendorId and get vendor info from first product
+const { vendorProducts, vendorInfo, bestSellers } = useMemo(() => {
+if (!vendorId || !products.length) {
+return { vendorProducts: [], vendorInfo: null, bestSellers: [] };
+}
+const filtered = products.filter((product) => product.vendorId === vendorId);
+if (filtered.length === 0) {
+return { vendorProducts: [], vendorInfo: null, bestSellers: [] };
+}
+// Get vendor info from the first product
+const firstProduct = filtered[0];
+const vendorInfo = {
+name: firstProduct.storeName || 'Unknown Vendor',
+businessName: firstProduct.storeName || 'Unknown Vendor',
+logo: firstProduct.vendorLogo,
+avatarUrl: firstProduct.vendorLogo,
+location: 'your region', // Default location
+};
+// Get best sellers - first 4 products (or products with bestseller flag)
+const bestSellersList = filtered
+.filter((p) => p.flags?.bestseller)
+.slice(0, 4);
+const bestSellers = bestSellersList.length >= 4
+? bestSellersList
+: filtered.slice(0, 4);
+return { vendorProducts: filtered, vendorInfo, bestSellers };
+}, [vendorId, products]);
+const sortProducts = (items: any[], sort: string) => {
+const arr = [...items];
+if (sort === "price-low") {
+arr.sort((a, b) => (a.price?.current || 0) - (b.price?.current || 0));
+} else if (sort === "price-high") {
+arr.sort((a, b) => (b.price?.current || 0) - (a.price?.current || 0));
+} else if (sort === "name") {
+arr.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+}
+return arr;
+};
+// Apply sorting to best sellers grid (above banner) too
+const sortedBestSellers = useMemo(() => {
+if (sortBy === "default") return bestSellers;
+return sortProducts(bestSellers, sortBy);
+}, [bestSellers, sortBy]);
+// Filter and sort products based on search, category, and sort options
+// Show all products that match the filters (including best sellers if they match)
+const filteredProducts = useMemo(() => {
+let filtered = [...vendorProducts];
+// Apply category filter
+if (selectedCategory) {
+filtered = filtered.filter((product) =>
+product.categoryId === selectedCategory
+);
+}
+// Apply search filter
+if (searchQuery.trim()) {
+filtered = filtered.filter((product) =>
+product.name.toLowerCase().includes(searchQuery.toLowerCase())
+);
+}
+// Apply sorting
+filtered = sortProducts(filtered, sortBy);
+return filtered;
+}, [vendorProducts, searchQuery, selectedCategory, sortBy]);
+// Helper to find category name for display
+const currentCategoryName =
+mainCategories.find((c) => c.id === selectedCategory)?.name ||
+"All Categories";
+const handleCategorySelect = (catId: string) => {
+const newCat = selectedCategory === catId ? "" : catId;
+setSelectedCategory(newCat);
+setIsCategoryDropdownOpen(false);
+};
+// Copy store link to clipboard (use canonical app URL so shared links use BuyerHub, not 9ja.ng or localhost)
+const handleCopyLink = () => {
+const baseUrl = (config.app.url || window.location.origin).replace(/\/$/, "");
+const path = window.location.pathname + window.location.search;
+const url = baseUrl + path;
+navigator.clipboard.writeText(url).then(() => {
+showNotification("Store link copied to clipboard!", "success", 3000);
+}).catch(() => {
+showNotification("Failed to copy link. Please try again.", "error", 3000);
+});
+};
+if (loading) {
+return (
+<div className="min-h-screen bg-card p-6">
+<div className=" mx-auto">
+<div className="flex items-center justify-center py-12">
+<Loading size="lg" />
+</div>
+</div>
+</div>
+);
+}
+if (error) {
+return (
+<div className="min-h-screen bg-card p-6">
+<div className=" mx-auto">
+<Alert variant="destructive" title="Error">
+{error}
+</Alert>
+</div>
+</div>
+);
+}
+if (!vendorId) {
+return (
+<div className="min-h-screen bg-card flex items-center justify-center">
+<div className="text-center">
+<h2 className="text-2xl font-bold text-foreground mb-2">
+Vendor Not Found
+</h2>
+<p className="text-muted-foreground">Invalid store link.</p>
+</div>
+</div>
+);
+}
+if (vendorProducts.length === 0) {
+return (
+<div className="min-h-screen bg-card pb-20 font-sans relative">
+<div className=" mx-auto px-4 md:px-6 pt-8">
+<div className="text-center py-12">
+<p className="text-muted-foreground text-lg">No products found for this vendor</p>
+</div>
+</div>
+</div>
+);
+}
+return (
+<div className="min-h-screen bg-card pb-20 font-sans relative max-w-[960px] lg:max-w-7xl 2xl:max-w-[1550px] mx-auto">
+{/* --- Container --- */}
+<div className=" mx-auto px-4 md:px-6 pt-8">
+{/* 1. Header Section */}
+<header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-100 pb-8 mb-8 gap-4">
+<div className="flex items-center gap-4">
+<div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-200 flex items-center justify-center">
+{vendorInfo?.avatarUrl || vendorInfo?.logo ? (
+<img
+src={vendorInfo.avatarUrl || vendorInfo.logo}
+alt="Vendor Avatar"
+className="w-full h-full object-cover"
+onError={() => {
+console.warn('Vendor logo failed to load:', vendorInfo?.avatarUrl || vendorInfo?.logo);
+}}
+/>
+) : (
+<div className="w-full h-full flex items-center justify-center text-muted-foreground/70 text-2xl font-bold">
+{(vendorInfo?.businessName ||
+vendorInfo?.name ||
+"V")[0].toUpperCase()}
+</div>
+)}
+</div>
+<div>
+<h1 className="text-2xl font-bold text-[#182F38]">
+{vendorInfo?.businessName ||
+vendorInfo?.name ||
+"Vendor Store"}
+</h1>
+<div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
+<MapPin className="w-3 h-3" />
+<span>
+{vendorInfo?.location || "your region"}
+</span>
+</div>
+<div className="flex items-center gap-4 mt-2 text-xs">
+<div className="flex items-center gap-1 text-yellow-500">
+<span className="font-bold">5.0</span>
+<Star className="w-3 h-3 fill-current" />
+</div>
+<span className="text-muted-foreground/70">|</span>
+<span className="text-muted-foreground">144 Reviews</span>
+<span className="text-muted-foreground/70">|</span>
+<div className="flex items-center gap-1 text-primary">
+<CheckCircle className="w-3 h-3" />
+<span>Verified</span>
+</div>
+</div>
+</div>
+</div>
+<button
+onClick={handleCopyLink}
+className="bg-primary text-primary-foreground px-6 py-2.5 rounded text-sm font-medium hover:bg-primary-hover transition-colors self-start md:self-center flex items-center gap-2 border border-primary"
+>
+<Copy className="w-4 h-4" />
+Copy Store Link
+</button>
+</header>
+{/* 2. Filter Bar - no z-index so it scrolls under the sticky navbar (navbar is z-50) */}
+<div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
+<div className="flex items-center gap-2">
+<h2 className="text-xl font-medium text-[#182F38]">
+Products{" "}
+<span className="text-muted-foreground/70 text-base">
+({filteredProducts.length})
+</span>
+</h2>
+</div>
+<div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+{/* Category Dropdown */}
+<div className="relative" ref={catDropdownRef}>
+<button
+onClick={() =>
+setIsCategoryDropdownOpen(!isCategoryDropdownOpen)
+}
+className={`flex items-center justify-between px-4 py-2 border rounded text-sm min-w-[160px] ${
+selectedCategory
+? "border-primary text-primary bg-primary/10"
+: "border-border text-foreground"
+}`}
+>
+<span className="truncate max-w-[120px]">
+{currentCategoryName}
+</span>
+<ChevronDown
+className={`w-4 h-4 opacity-50 transition-transform ${
+isCategoryDropdownOpen ? "rotate-180" : ""
+}`}
+/>
+</button>
+{isCategoryDropdownOpen && (
+<div className="absolute top-full left-0 mt-2 w-56 bg-card border border-gray-100 rounded-lg shadow-xl z-[100] overflow-hidden max-h-48 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
+<button
+onClick={() => handleCategorySelect("")}
+className={`w-full text-left px-4 py-2 text-sm hover:bg-muted ${
+!selectedCategory
+? "text-primary font-semibold bg-muted"
+: "text-muted-foreground"
+}`}
+>
+All Categories
+</button>
+{mainCategories.map((cat) => (
+<button
+key={cat.id}
+onClick={() => handleCategorySelect(cat.id)}
+className={`w-full text-left px-4 py-2 text-sm hover:bg-muted ${
+selectedCategory === cat.id
+? "text-primary font-semibold bg-muted"
+: "text-muted-foreground"
+}`}
+>
+{cat.name}
+</button>
+))}
+</div>
+)}
+</div>
+{/* Search Input */}
+<div className="relative flex-1 md:w-80">
+<input
+type="text"
+value={searchQuery}
+onChange={(e) => setSearchQuery(e.target.value)}
+placeholder="Search products..."
+className="w-full pl-4 pr-10 py-2 border border-border rounded text-sm focus:outline-none focus:border-primary"
+/>
+{loading ? (
+<Search className="w-4 h-4 text-muted-foreground/70 absolute right-3 top-1/2 -translate-y-1/2" />
+) : (
+<Search className="w-4 h-4 text-muted-foreground/70 absolute right-3 top-1/2 -translate-y-1/2" />
+)}
+</div>
+{/* Sort Button */}
+<button
+onClick={() => {
+const options = ["default", "price-low", "price-high", "name"];
+const currentIndex = options.indexOf(sortBy);
+setSortBy(options[(currentIndex + 1) % options.length]);
+}}
+className="flex items-center gap-2 px-4 py-2 border border-border rounded text-sm text-foreground hover:bg-muted"
+>
+<ArrowUpDown className="w-4 h-4" />
+Sort by
+</button>
+</div>
+</div>
+{/* 3. Fast Selling Grid - Only show when no filters are applied (above All vendor Products) */}
+{bestSellers.length > 0 && !selectedCategory && !searchQuery.trim() && (
+<div className="mb-10">
+<div className="mb-4">
+<div className="flex items-center">
+<div className="w-4 h-10 rounded bg-primary mr-2 flex-shrink-0" />
+<h3 className="text-2xl sm:text-3xl font-bold text-foreground">
+Fast Selling
+</h3>
+</div>
+<p className="text-muted-foreground mt-2 ml-6">
+Popular items selling out quickly
+</p>
+</div>
+<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+{sortedBestSellers.slice(0, 4).map((product) => (
+<ProductCard key={product.id} product={normalizeProductImages(product)} />
+))}
+</div>
+</div>
+)}
+{/* 4. All vendor Products (active) - Only show when no filters are applied */}
+{vendorProducts.length > 0 && !selectedCategory && !searchQuery.trim() && (
+<div className="mb-10">
+<div className="mb-4">
+<div className="flex items-center">
+<div className="w-4 h-10 rounded bg-primary mr-2 flex-shrink-0" />
+<h3 className="text-2xl sm:text-3xl font-bold text-foreground">
+All vendor Products
+</h3>
+</div>
+<p className="text-muted-foreground mt-2 ml-6">
+Explore everything from {vendorInfo?.name ?? "this"} Store
+</p>
+</div>
+<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+{(sortBy === "default" ? vendorProducts : sortProducts([...vendorProducts], sortBy)).map((product) => (
+<ProductCard key={product.id} product={normalizeProductImages(product)} />
+))}
+</div>
+</div>
+)}
+{/* 5. Main Product Grid - only when filters are applied (category or search) */}
+{(selectedCategory || searchQuery.trim()) && (
+<div className="mb-14">
+{filteredProducts.length === 0 && !loading ? (
+<div className="text-center py-20 bg-muted rounded-lg border border-dashed border-border">
+<div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground/70">
+<Search className="w-8 h-8" />
+</div>
+<h3 className="text-lg font-medium text-foreground">
+No products found
+</h3>
+<p className="text-muted-foreground mt-1">
+Try adjusting your search or filters.
+</p>
+<button
+onClick={() => {
+setSearchQuery("");
+setSelectedCategory("");
+}}
+className="mt-4 text-primary font-medium hover:underline"
+>
+Clear all filters
+</button>
+</div>
+) : (
+<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+{filteredProducts.map((product) => (
+<ProductCard key={product.id} product={normalizeProductImages(product)} />
+))}
+</div>
+)}
+</div>
+)}
+</div>
+</div>
+);
+};
+export default VendorStorefrontPage;

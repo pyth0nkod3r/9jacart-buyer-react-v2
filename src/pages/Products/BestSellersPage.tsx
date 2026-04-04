@@ -1,0 +1,135 @@
+import React, { useState } from 'react';
+import { Breadcrumb, Loading, Alert } from '../../components/UI';
+import ProductCard from '../../components/Product/ProductCard';
+import { useRealProductsList } from '../../hooks/api/useRealProducts';
+import { normalizeProductImages } from '@/lib/utils';
+import Container from '@/components/Layout/Container';
+const BestSellersPage: React.FC = () => {
+const [searchQuery, setSearchQuery] = useState('');
+const [currentPage, setCurrentPage] = useState(1);
+const perPage = 12;
+const {
+products,
+loading,
+error,
+pagination,
+refetch
+} = useRealProductsList({
+page: currentPage,
+perPage,
+...(searchQuery && { search: searchQuery })
+});
+if (loading) {
+return (
+<Container>
+<div className=" mx-auto">
+<div className="flex items-center justify-center py-12">
+<Loading size="lg" />
+</div>
+</div>
+</Container>
+);
+}
+if (error) {
+return (
+<Container>
+<div className=" mx-auto">
+<Alert variant="destructive" title="Error">
+{error}
+</Alert>
+</div>
+</Container>
+);
+}
+return (
+<Container >
+<div className=" mx-auto">
+{/* Breadcrumb */}
+<Breadcrumb className="mb-6" />
+{/* Header */}
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
+<div>
+<h1 className="text-2xl sm:text-3xl font-bold text-foreground">Best Sellers</h1>
+<p className="text-muted-foreground mt-1 sm:mt-2">
+Showing {products.length} active best selling product
+{products.length !== 1 ? 's' : ''}
+</p>
+</div>
+{/* Search */}
+<div className="w-full sm:w-auto sm:max-w-md">
+<input
+type="text"
+placeholder="Search best sellers..."
+value={searchQuery}
+onChange={(e) => {
+setSearchQuery(e.target.value);
+setCurrentPage(1);
+}}
+onKeyPress={(e) => {
+if (e.key === 'Enter') {
+refetch({ page: 1, perPage, search: searchQuery });
+}
+}}
+className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+/>
+</div>
+</div>
+{/* Products Grid */}
+{products.length > 0 ? (
+<>
+<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+{products.map((product) => (
+<ProductCard
+key={product.id}
+product={normalizeProductImages(product)}
+showQuickAdd={true}
+className="w-full"
+/>
+))}
+</div>
+{/* Pagination */}
+{pagination.totalPages > 1 && (
+<div className="flex justify-center items-center gap-2 mt-8">
+<button
+onClick={() => {
+if (currentPage > 1) {
+setCurrentPage(currentPage - 1);
+}
+}}
+disabled={currentPage <= 1}
+className="px-4 py-2 border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+>
+Previous
+</button>
+<span className="px-4 py-2 text-sm text-muted-foreground">
+Page {pagination.currentPage} of {pagination.totalPages}
+</span>
+<button
+onClick={() => {
+if (currentPage < pagination.totalPages) {
+setCurrentPage(currentPage + 1);
+}
+}}
+disabled={currentPage >= pagination.totalPages}
+className="px-4 py-2 border border-border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-muted"
+>
+Next
+</button>
+</div>
+)}
+</>
+) : (
+<div className="text-center py-12">
+<p className="text-muted-foreground text-lg">No best sellers found</p>
+{searchQuery && (
+<p className="text-muted-foreground/70 mt-2">
+Try adjusting your search terms
+</p>
+)}
+</div>
+)}
+</div>
+</Container>
+);
+};
+export default BestSellersPage;

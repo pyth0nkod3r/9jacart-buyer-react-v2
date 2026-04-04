@@ -1,0 +1,7 @@
+/**
+ * Main CSS Entry Point
+ * Imports theme CSS variables and styles
+ */
+
+/* Import theme variables first */
+@import './styles/themes.css';
