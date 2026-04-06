@@ -12,7 +12,7 @@ import { Helmet } from "react-helmet-async";
 const HomePage: React.FC = () => {
 const { isAuthenticated } = useAuthStore();
 return (
-<div className="bg-white min-h-screen max-w-[960px] lg:max-w-7xl 2xl:max-w-[1550px] mx-auto">
+<div className="bg-background min-h-screen max-w-[960px] lg:max-w-7xl 2xl:max-w-[1550px] mx-auto">
 <Helmet>
 <title>BuyerHub - Your One-Stop Online Shopping Destination</title>
 <meta name="description" content="Shop top deals on electronics, fashion, home appliances & more at BuyerHub. Fast delivery, secure checkout & great prices. Start shopping today!" />

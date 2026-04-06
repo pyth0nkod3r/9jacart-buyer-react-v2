@@ -8,6 +8,7 @@ export interface CarouselSlide {
   cta: string;
   bg: string;
   image: string;
+  textColor?: string;
 }
 
 interface HeroCarouselProps {
@@ -82,16 +83,19 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({
               {/* Content Side */}
               <div
                 className="flex flex-col justify-center px-4 sm:px-6 lg:px-10 py-6 sm:py-8 h-full"
-                style={{ backgroundColor: slide.bg }}
+                style={{ backgroundColor: slide.bg, color: slide.textColor ?? 'hsl(var(--foreground))' }}
               >
                 <div className="max-w-md">
-                  <div className="text-xs sm:text-sm text-foreground/80 mb-2 font-medium uppercase tracking-wide">
+                  <div className="text-xs sm:text-sm mb-2 font-medium uppercase tracking-wide" style={{ opacity: 0.85, color: slide.textColor ?? 'hsl(var(--foreground))' }}>
                     {slide.title}
                   </div>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 sm:mb-4 leading-tight">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-tight" style={{ color: slide.textColor ?? 'hsl(var(--foreground))' }}>
                     {slide.subtitle}
                   </h2>
-                  <button className="inline-flex items-center gap-2 mt-2 text-foreground font-semibold text-sm sm:text-base hover:gap-3 transition-all duration-300 group">
+                  <button
+                    className="inline-flex items-center gap-2 mt-2 font-semibold text-sm sm:text-base hover:gap-3 transition-all duration-300 group"
+                    style={{ color: slide.textColor ?? 'hsl(var(--foreground))' }}
+                  >
                     {slide.cta}
                     <span className="group-hover:translate-x-1 transition-transform duration-300">→</span>
                   </button>
