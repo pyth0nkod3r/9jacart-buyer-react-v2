@@ -343,10 +343,10 @@ export const orderApi = {
   // Place order (mock)
   checkout: async (orderData: CheckoutRequest): Promise<CheckoutResponse> => {
     await simulateDelay(500);
-    
+
     const orderNo = "ORD-" + Date.now();
     const total = orderData.orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    
+
     return {
       orderNo,
       paymentData: {
@@ -370,13 +370,13 @@ export const orderApi = {
       }
     };
   },
-  
+
   // Get order details (mock)
   getOrderDetail: async (orderId: string): Promise<OrderDetailResponse> => {
     await simulateDelay(300);
-    
+
     const order = MOCK_ORDERS.find(o => o.orderNo === orderId);
-    
+
     if (!order) {
       return {
         orderNo: orderId,
@@ -386,47 +386,47 @@ export const orderApi = {
         items: []
       };
     }
-    
+
     return transformApiOrderToOrderDetailResponse(order);
   },
-  
+
   // Get user orders list (mock)
   getOrders: async (): Promise<ApiOrder[]> => {
     await simulateDelay(400);
     return MOCK_ORDERS;
   },
-  
+
   // Rate order (mock)
-  rateOrder: async (ratingData: RateOrderRequest): Promise<RateOrderResponse> => {
+  rateOrder: async (_ratingData: RateOrderRequest): Promise<RateOrderResponse> => {
     await simulateDelay(300);
-    
+
     return {
       status: 200,
       error: false,
       message: "Rating submitted successfully"
     };
   },
-  
+
   // Rate order items (mock)
-  rateOrderItems: async (orderNo: string, ratings: Array<{
+  rateOrderItems: async (_orderNo: string, _ratings: Array<{
     productId: string;
     vendorId: string;
     rating: number;
     comment?: string;
   }>): Promise<RateOrderResponse> => {
     await simulateDelay(300);
-    
+
     return {
       status: 200,
       error: false,
       message: "Ratings submitted successfully"
     };
   },
-  
+
   // Get order ratings (mock)
-  getOrderRatings: async (orderId: string): Promise<GetOrderRatingsResponse> => {
+  getOrderRatings: async (_orderId: string): Promise<GetOrderRatingsResponse> => {
     await simulateDelay(200);
-    
+
     return {
       status: 200,
       error: false,
@@ -434,11 +434,11 @@ export const orderApi = {
       data: []
     };
   },
-  
+
   // Get order items (mock)
   getOrderItems: async (orderId: string): Promise<ApiOrderItem[]> => {
     await simulateDelay(300);
-    
+
     const order = MOCK_ORDERS.find(o => o.orderNo === orderId);
     return order?.orderItems || [];
   },
@@ -502,10 +502,10 @@ export const transformApiOrderToOrderDetailResponse = (apiOrder: ApiOrder): Orde
     const productImage = productImagesArray && Array.isArray(productImagesArray) && productImagesArray.length > 0
       ? productImagesArray[0]
       : (item as any).product?.image ||
-        (item as any).product?.images?.main ||
-        (item as any).productImage ||
-        (item as any).image ||
-        '';
+      (item as any).product?.images?.main ||
+      (item as any).productImage ||
+      (item as any).image ||
+      '';
     return {
       id: item.id,
       productId: item.productId,
@@ -517,7 +517,7 @@ export const transformApiOrderToOrderDetailResponse = (apiOrder: ApiOrder): Orde
       vendor: item.vendor,
     };
   });
-  
+
   const total = typeof apiOrder.totalAmount === 'string'
     ? parseFloat(apiOrder.totalAmount)
     : apiOrder.totalAmount || 0;
@@ -527,10 +527,10 @@ export const transformApiOrderToOrderDetailResponse = (apiOrder: ApiOrder): Orde
   const discount = typeof apiOrder.discountAmount === 'string'
     ? parseFloat(apiOrder.discountAmount)
     : apiOrder.discountAmount || 0;
-  
+
   const billingName = apiOrder.billingName || '';
   const nameParts = billingName.split(' ');
-  
+
   return {
     orderNo: apiOrder.orderNo,
     status: apiOrder.status,
@@ -564,7 +564,7 @@ export const transformApiOrderToOrder = (apiOrder: ApiOrder): any => {
   const total = typeof apiOrder.totalAmount === 'string'
     ? parseFloat(apiOrder.totalAmount)
     : apiOrder.totalAmount || 0;
-  
+
   const items = (apiOrder.orderItems || []).map((item) => {
     const quantity = typeof item.quantity === 'string'
       ? parseInt(item.quantity, 10)
@@ -580,10 +580,10 @@ export const transformApiOrderToOrder = (apiOrder: ApiOrder): any => {
     const productImage = productImagesArray && Array.isArray(productImagesArray) && productImagesArray.length > 0
       ? productImagesArray[0]
       : (item as any).product?.image ||
-        (item as any).product?.images?.main ||
-        (item as any).productImage ||
-        (item as any).image ||
-        '';
+      (item as any).product?.images?.main ||
+      (item as any).productImage ||
+      (item as any).image ||
+      '';
     return {
       id: item.id || item.productId,
       product: {
@@ -603,10 +603,10 @@ export const transformApiOrderToOrder = (apiOrder: ApiOrder): any => {
       vendor: item.vendor,
     };
   });
-  
+
   const billingName = apiOrder.billingName || '';
   const nameParts = billingName.split(' ');
-  
+
   return {
     id: orderId,
     items,
@@ -632,7 +632,7 @@ export const transformOrderDetailToOrder = (
   orderDetail: OrderDetailResponse
 ): any => {
   const orderId = orderDetail.orderId || orderDetail.orderNumber || orderDetail.orderNo || '';
-  
+
   const items = orderDetail.items.map((item) => ({
     id: item.id || item.productId,
     product: {
@@ -649,11 +649,11 @@ export const transformOrderDetailToOrder = (
     subtotal: item.subtotal,
     vendor: item.vendor,
   }));
-  
+
   const shippingAddress = orderDetail.shippingAddress || orderDetail.billingAddress || ({} as OrderDetailResponse['shippingAddress']);
   const firstName = shippingAddress?.firstName || '';
   const nameParts = firstName.split(' ');
-  
+
   return {
     id: orderId,
     items,

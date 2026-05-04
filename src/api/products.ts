@@ -1,4 +1,3 @@
-import { config } from '../lib/config';
 
 // Products API request types
 export interface ProductsListParams {
@@ -752,44 +751,44 @@ export const productsApi = {
     params: ProductsListParams = {}
   ): Promise<ProductsListResponse> => {
     await simulateDelay(400);
-    
+
     const page = params.page ?? 1;
     const perPage = params.perPage ?? 10;
     const search = params.search?.toLowerCase() || '';
     const category = params.category?.toLowerCase() || '';
-    
+
     // Filter products
     let filteredProducts = [...MOCK_PRODUCTS];
-    
+
     // Filter by active status
     if (params.isActive === "1") {
       filteredProducts = filteredProducts.filter(p => p.isActive === "1");
     }
-    
+
     // Filter by category
     if (category) {
-      filteredProducts = filteredProducts.filter(p => 
-        p.categoryId.toLowerCase() === category || 
+      filteredProducts = filteredProducts.filter(p =>
+        p.categoryId.toLowerCase() === category ||
         p.categoryName.toLowerCase() === category
       );
     }
-    
+
     // Filter by search
     if (search) {
-      filteredProducts = filteredProducts.filter(p => 
+      filteredProducts = filteredProducts.filter(p =>
         p.productName.toLowerCase().includes(search) ||
         p.productDescription.toLowerCase().includes(search) ||
         p.productTags.some(tag => tag.toLowerCase().includes(search))
       );
     }
-    
+
     // Calculate pagination
     const totalItems = filteredProducts.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-    
+
     return {
       status: 200,
       error: false,
@@ -803,13 +802,13 @@ export const productsApi = {
       }
     };
   },
-  
+
   // Get single product (mock)
   getProduct: async (productId: string): Promise<SingleProductResponse> => {
     await simulateDelay(300);
-    
+
     const product = MOCK_PRODUCTS.find(p => p.productId === productId);
-    
+
     if (!product) {
       return {
         status: 404,
@@ -818,7 +817,7 @@ export const productsApi = {
         data: null as any
       };
     }
-    
+
     return {
       status: 200,
       error: false,
@@ -826,44 +825,44 @@ export const productsApi = {
       data: product
     };
   },
-  
+
   // Get products by category (mock)
   getProductsByCategory: async (
     categoryId: string,
     params: Omit<ProductsListParams, "category"> = {}
   ): Promise<ProductsListResponse> => {
     await simulateDelay(400);
-    
+
     const page = params.page ?? 1;
     const perPage = params.perPage ?? 10;
     const search = params.search?.toLowerCase() || '';
-    
+
     // Filter by category
-    let filteredProducts = MOCK_PRODUCTS.filter(p => 
+    let filteredProducts = MOCK_PRODUCTS.filter(p =>
       p.categoryId.toLowerCase() === categoryId.toLowerCase() ||
       p.categoryName.toLowerCase() === categoryId.toLowerCase()
     );
-    
+
     // Filter by active status
     if (params.isActive === "1") {
       filteredProducts = filteredProducts.filter(p => p.isActive === "1");
     }
-    
+
     // Filter by search
     if (search) {
-      filteredProducts = filteredProducts.filter(p => 
+      filteredProducts = filteredProducts.filter(p =>
         p.productName.toLowerCase().includes(search) ||
         p.productDescription.toLowerCase().includes(search)
       );
     }
-    
+
     // Calculate pagination
     const totalItems = filteredProducts.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
     const startIndex = (page - 1) * perPage;
     const endIndex = startIndex + perPage;
     const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-    
+
     return {
       status: 200,
       error: false,
@@ -877,26 +876,26 @@ export const productsApi = {
       }
     };
   },
-  
+
   /**
    * Track product view for recently-viewed recommendations.
    * Mock version - does nothing
    */
-  trackProductView: async (productId: string): Promise<void> => {
+  trackProductView: async (_productId: string): Promise<void> => {
     // Mock - no operation
     await simulateDelay(100);
   },
-  
+
   /**
    * Get product ratings (mock)
    */
-  getProductRatings: async (productId: string): Promise<ProductRatingsResponse> => {
+  getProductRatings: async (_productId: string): Promise<ProductRatingsResponse> => {
     await simulateDelay(200);
-    
+
     // Generate random rating for mock
     const rating = (Math.random() * 1.5 + 3.5).toFixed(1);
     const count = Math.floor(Math.random() * 200) + 10;
-    
+
     return {
       status: 200,
       error: false,

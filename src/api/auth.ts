@@ -113,12 +113,12 @@ const generateMockToken = () => {
 // Auth API endpoints - MOCK VERSION
 export const authApi = {
   // Login (mock)
-  login: async (email: string, password: string, rememberMe: boolean = false): Promise<LoginResponse> => {
+  login: async (email: string, password: string, _rememberMe: boolean = false): Promise<LoginResponse> => {
     await simulateDelay(500);
-    
+
     // Check if user exists in mock storage
     const existingUser = mockUsers.get(email.toLowerCase());
-    
+
     if (existingUser && existingUser.password === password) {
       return {
         status: 200,
@@ -130,7 +130,7 @@ export const authApi = {
         }
       };
     }
-    
+
     // For demo purposes, create a new user on any login attempt
     const [firstName, lastName] = email.split('@')[0].split('.');
     const userData: LoginResponse['data'] = {
@@ -146,10 +146,10 @@ export const authApi = {
       updatedAt: new Date().toISOString(),
       token: generateMockToken()
     };
-    
+
     // Store the mock user for future logins
     mockUsers.set(email.toLowerCase(), { password, userData });
-    
+
     return {
       status: 200,
       error: false,
@@ -160,7 +160,7 @@ export const authApi = {
       }
     };
   },
-  
+
   // Register (mock)
   register: async (userData: {
     firstName: string;
@@ -171,7 +171,7 @@ export const authApi = {
     passwordConfirmation: string;
   }): Promise<RegisterResponse> => {
     await simulateDelay(600);
-    
+
     // Check if user already exists
     if (mockUsers.has(userData.email.toLowerCase())) {
       return {
@@ -180,7 +180,7 @@ export const authApi = {
         message: "Email already registered"
       };
     }
-    
+
     // Create mock user
     const newUserData: LoginResponse['data'] = {
       buyerId: 'user_' + Math.random().toString(36).substring(2),
@@ -195,9 +195,9 @@ export const authApi = {
       updatedAt: new Date().toISOString(),
       token: ''
     };
-    
+
     mockUsers.set(userData.email.toLowerCase(), { password: userData.password, userData: newUserData });
-    
+
     return {
       status: 200,
       error: false,
@@ -208,11 +208,11 @@ export const authApi = {
       }
     };
   },
-  
+
   // Verify email (mock)
-  verifyEmail: async (identifier: string, code: string): Promise<VerifyEmailResponse> => {
+  verifyEmail: async (_identifier: string, code: string): Promise<VerifyEmailResponse> => {
     await simulateDelay(400);
-    
+
     // Accept any 6-digit code for demo
     if (code.length === 6) {
       return {
@@ -221,29 +221,29 @@ export const authApi = {
         message: "Email verified successfully"
       };
     }
-    
+
     return {
       status: 400,
       error: true,
       message: "Invalid verification code"
     };
   },
-  
+
   // Resend OTP (mock)
-  resendOtp: async (identifier: string): Promise<ResendOtpResponse> => {
+  resendOtp: async (_identifier: string): Promise<ResendOtpResponse> => {
     await simulateDelay(300);
-    
+
     return {
       status: 200,
       error: false,
       message: "Verification code sent successfully"
     };
   },
-  
+
   // Google Login (mock)
-  googleLogin: async (idToken: string): Promise<GoogleLoginResponse> => {
+  googleLogin: async (_idToken: string): Promise<GoogleLoginResponse> => {
     await simulateDelay(500);
-    
+
     // Simulate Google login
     return {
       status: 200,
@@ -264,22 +264,22 @@ export const authApi = {
       }
     };
   },
-  
+
   // Forgot password (mock)
-  forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
+  forgotPassword: async (_email: string): Promise<ForgotPasswordResponse> => {
     await simulateDelay(400);
-    
+
     return {
       status: 200,
       error: false,
       message: "Password reset link sent to your email"
     };
   },
-  
+
   // Reset password (mock)
-  resetPassword: async (token: string, password: string, passwordConfirmation: string): Promise<ResetPasswordResponse> => {
+  resetPassword: async (_token: string, _password: string, _passwordConfirmation: string): Promise<ResetPasswordResponse> => {
     await simulateDelay(400);
-    
+
     return {
       status: 200,
       error: false,
